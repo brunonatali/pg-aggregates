@@ -6,6 +6,22 @@ import type {
   GraphQLObjectType,
 } from "graphql";
 
+type TZ_TIME_TYPE =
+  | "00"
+  | "01"
+  | "02"
+  | "03"
+  | "04"
+  | "05"
+  | "06"
+  | "07"
+  | "08"
+  | "09"
+  | "10"
+  | "11"
+  | "12";
+export type TIMEZONE_TYPE = `${TZ_TIME_TYPE}` | `-${TZ_TIME_TYPE}`;
+
 function isValidEnum(enumType: GraphQLEnumType): boolean {
   try {
     if (!enumType) {
@@ -23,7 +39,7 @@ function isValidEnum(enumType: GraphQLEnumType): boolean {
 const AddConnectionGroupedAggregatesPlugin: Plugin = (builder) => {
   builder.hook("GraphQLObjectType:fields", (fields, build, context) => {
     const {
-      graphql: { GraphQLList, GraphQLNonNull },
+      graphql: { GraphQLList, GraphQLNonNull, GraphQLString },
       inflection,
       getSafeAliasFromResolveInfo,
       pgSql: sql,
@@ -98,8 +114,9 @@ const AddConnectionGroupedAggregatesPlugin: Plugin = (builder) => {
                   options: any;
                 }) => {
                   const args = parsedResolveInfoFragment.args;
+                  const timezone: TIMEZONE_TYPE | null = args.having || null;
                   const groupBy: SQL[] = args.groupBy.map((b: any) =>
-                    b.spec(queryBuilder.getTableAlias())
+                    b.spec(queryBuilder.getTableAlias(), timezone)
                   );
                   const having: SQL | null = args.having
                     ? TableHavingInputType.extensions.graphile.toSql(
@@ -172,6 +189,13 @@ coalesce((select json_agg(j.data) from (
                 ),
                 description: build.wrapDescription(
                   `The method to use when grouping \`${tableTypeName}\` for these aggregates.`,
+                  "arg"
+                ),
+              },
+              timezone: {
+                type: GraphQLString,
+                description: build.wrapDescription(
+                  `Use this to set time zone for date_trunc. ([-]00)`,
                   "arg"
                 ),
               },

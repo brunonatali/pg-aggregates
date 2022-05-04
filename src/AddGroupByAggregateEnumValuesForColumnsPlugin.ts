@@ -1,6 +1,7 @@
 import type { Plugin } from "graphile-build";
 import type { PgClass, SQL } from "graphile-build-pg";
 import { AggregateGroupBySpec } from "./interfaces";
+import { TIMEZONE_TYPE } from "./AddConnectionGroupedAggregatesPlugin";
 
 const AddGroupByAggregateEnumValuesForColumnsPlugin: Plugin = (builder) => {
   // Now add group by columns
@@ -43,8 +44,10 @@ const AddGroupByAggregateEnumValuesForColumnsPlugin: Plugin = (builder) => {
             {
               [fieldName]: {
                 value: {
-                  spec: (tableAlias: SQL) =>
-                    sql.fragment`${tableAlias}.${sql.identifier(attr.name)}`,
+                  spec: (tableAlias: SQL, timezone: TIMEZONE_TYPE) =>
+                    sql.fragment`${tableAlias}.${sql.identifier(attr.name)}${
+                      timezone ? ` AT TIME ZONE ${sql.value(timezone)}` : ""
+                    }`,
                 },
               },
             },
@@ -72,11 +75,15 @@ const AddGroupByAggregateEnumValuesForColumnsPlugin: Plugin = (builder) => {
                 {
                   [fieldName]: {
                     value: {
-                      spec: (tableAlias: SQL) =>
+                      spec: (tableAlias: SQL, timezone: TIMEZONE_TYPE) =>
                         spec.sqlWrap(
                           sql.fragment`${tableAlias}.${sql.identifier(
                             attr.name
-                          )}`
+                          )}${
+                            timezone
+                              ? ` AT TIME ZONE ${sql.value(timezone)}`
+                              : ""
+                          }`
                         ),
                     },
                   },
