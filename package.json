@@ -1,5 +1,5 @@
 {
-  "name": "@graphile/pg-aggregates",
+  "name": "@brunatali/pg-aggregates",
   "version": "0.1.0",
   "description": "Aggregates support for PostGraphile",
   "main": "dist/index.js",
