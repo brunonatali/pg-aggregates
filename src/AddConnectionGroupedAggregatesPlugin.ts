@@ -114,7 +114,7 @@ const AddConnectionGroupedAggregatesPlugin: Plugin = (builder) => {
                   options: any;
                 }) => {
                   const args = parsedResolveInfoFragment.args;
-                  const timezone: TIMEZONE_TYPE | null = args.having || null;
+                  const timezone: TIMEZONE_TYPE | null = args.timezone || null;
                   const groupBy: SQL[] = args.groupBy.map((b: any) =>
                     b.spec(queryBuilder.getTableAlias(), timezone)
                   );
