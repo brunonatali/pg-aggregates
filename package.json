@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/graphile/pg-aggregates.git"
+    "url": "git+https://github.com/brunonatali/pg-aggregates.git"
   },
   "keywords": [
     "postgraphile",
@@ -24,14 +24,15 @@
     "pg",
     "postgres",
     "postgresql",
-    "graphql"
+    "graphql",
+    "timezone"
   ],
-  "author": "Benjie Gillam <code@benjiegillam.com>",
+  "author": "Benjie Gillam <code@benjiegillam.com>, [mod] Bruno Natali <github.com/brunonatali>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/graphile/pg-aggregates/issues"
+    "url": "https://github.com/brunonatali/pg-aggregates/issues"
   },
-  "homepage": "https://github.com/graphile/pg-aggregates#readme",
+  "homepage": "https://github.com/brunonatali/pg-aggregates#readme",
   "peerDependencies": {
     "graphile-build": "^4.12.0-alpha.0",
     "graphile-build-pg": "^4.12.0-alpha.0",
