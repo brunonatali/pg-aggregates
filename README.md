@@ -1,6 +1,6 @@
 # @brunatali/pg-aggregates
 
-Same pluging from `@graphile/pg-aggregates` incuding changable time zone.
+Same pluging from `@graphile/pg-aggregates` incuding custumizable time zone.
 
 ## @graphile/pg-aggregates
 
@@ -8,13 +8,13 @@ Same pluging from `@graphile/pg-aggregates` incuding changable time zone.
 
 ## Usage
 
-`timezone` is applicable just for `groupBy` using column that represents `time`,
+`timezone` is just applicable for `groupBy` using column that represents `time`,
 `date` or both.  
 It's value must be entered as `string`, representing hour. Eg:
 
 - '03'
 - '11'
-- '-4'
+- '-04'
 - '-10'
 
 You can issue a GraphQL query such as:
