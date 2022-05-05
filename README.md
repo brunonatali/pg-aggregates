@@ -84,16 +84,48 @@ const DATE_OID = "1082";
 const TIMESTAMP_OID = "1114";
 const TIMESTAMPTZ_OID = "1184";
 
-// Determine if a given type is a timestamp/timestamptz
-const isTimestamp = (pgType) =>
-  pgType.id === DATE_OID ||
-  pgType.id === TIMESTAMP_OID ||
-  pgType.id === TIMESTAMPTZ_OID;
+// Produce an indexable list of date_trunc fields
+// Other values: microseconds, milliseconds, second, minute, quarter,
+// decade, century, millennium.
+// See https://www.postgresql.org/docs/current/functions-datetime.html#FUNCTIONS-DATETIME-TRUNC
+const dateInterval = {
+  year: {
+    id: 1,
+    name: "year",
+  },
+  month: {
+    id: 2,
+    name: "month",
+  },
+  week: {
+    id: 3,
+    name: "week",
+  },
+  day: {
+    id: 4,
+    name: "day",
+  },
+  hour: {
+    id: 5,
+    name: "hour",
+  },
+};
 
 // Build a spec that truncates to the given interval
 const tsTruncateSpec = (sql, interval) => ({
   id: `truncated-to-${interval}`,
-  isSuitableType: isTimestamp,
+  isSuitableType: (pgType) => {
+    // Determine if a given type is a timestamp/timestamptz
+    if (pgType.id === TIMESTAMP_OID || pgType.id === TIMESTAMPTZ_OID) {
+      return true;
+    }
+    // Date type columns must not truncate to `day` or `hour`
+    if (pgType.id === DATE_OID && interval.id <= dateInterval.week.id) {
+      return true;
+    }
+
+    return false;
+  },
   sqlWrap: (sqlFrag) =>
     sql.fragment`date_trunc(${sql.literal(interval)}, ${sqlFrag})`,
   isTimestampLike: true,
@@ -112,14 +144,9 @@ const DateTruncAggregateGroupSpecsPlugin = (builder) => {
       ),
 
       // Add our timestamp specs
-      tsTruncateSpec(sql, "year"),
-      tsTruncateSpec(sql, "month"),
-      tsTruncateSpec(sql, "week"),
-      tsTruncateSpec(sql, "day"),
-      tsTruncateSpec(sql, "hour"),
-      // Other values: microseconds, milliseconds, second, minute, quarter,
-      // decade, century, millennium.
-      // See https://www.postgresql.org/docs/current/functions-datetime.html#FUNCTIONS-DATETIME-TRUNC
+      ...Object.entries(dateInterval).map(([, dateField]) =>
+        truncateBySpec(sql, dateField)
+      ),
     ];
 
     return build;
