@@ -46,7 +46,10 @@ const AddGroupByAggregateEnumValuesForColumnsPlugin: Plugin = (builder) => {
                 value: {
                   spec: (tableAlias: SQL, timezone: TIMEZONE_TYPE) =>
                     sql.fragment`${tableAlias}.${sql.identifier(attr.name)}${
-                      timezone
+                      timezone &&
+                      (attr.type.id === "1082" || // DATE_OID
+                        attr.type.id === "1114" || // TIMESTAMP_OID
+                        attr.type.id === "1184") // TIMESTAMPTZ_OID
                         ? sql.fragment` AT TIME ZONE ${sql.value(timezone)}`
                         : ""
                     }`,
@@ -82,7 +85,7 @@ const AddGroupByAggregateEnumValuesForColumnsPlugin: Plugin = (builder) => {
                           sql.fragment`${tableAlias}.${sql.identifier(
                             attr.name
                           )}${
-                            timezone
+                            timezone && spec.isTimestampLike
                               ? sql.fragment` AT TIME ZONE ${sql.value(
                                   timezone
                                 )}`

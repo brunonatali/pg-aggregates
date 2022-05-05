@@ -12,6 +12,9 @@ export interface AggregateGroupBySpec {
 
   /** Wraps the SQL to return a derivative (e.g. sqlFrag => sql.fragment`date_trunc('hour', ${sqlFrag})`) */
   sqlWrap: (sqlFrag: SQL) => SQL;
+
+  /** Tell the query builder the column type, making it possible to add or modify sql for right query */
+  isTimestampLike?: boolean;
 }
 
 export interface AggregateSpec {

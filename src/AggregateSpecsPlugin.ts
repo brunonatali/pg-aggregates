@@ -195,6 +195,7 @@ const AggregateSpecsPlugin: Plugin = (builder) => {
         isSuitableType: (pgType) =>
           /* timestamp or timestamptz */
           pgType.id === TIMESTAMP_OID || pgType.id === TIMESTAMPTZ_OID,
+        isTimestampLike: true,
         sqlWrap: (sqlFrag) => sql.fragment`date_trunc('hour', ${sqlFrag})`,
       },
       {
@@ -202,6 +203,7 @@ const AggregateSpecsPlugin: Plugin = (builder) => {
         isSuitableType: (pgType) =>
           /* timestamp or timestamptz */
           pgType.id === TIMESTAMP_OID || pgType.id === TIMESTAMPTZ_OID,
+        isTimestampLike: true,
         sqlWrap: (sqlFrag) => sql.fragment`date_trunc('day', ${sqlFrag})`,
       },
     ];
