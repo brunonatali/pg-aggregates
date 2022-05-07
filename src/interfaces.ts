@@ -52,6 +52,24 @@ export interface AggregateSpec {
   isNonNull?: boolean;
 }
 
+export type PostgresTimeIntervalType =
+  | "seconds"
+  | "secondsFloat"
+  | "minutes"
+  | "hours"
+  | "days"
+  | "months"
+  | "years"
+  | "iso"
+  | "isoShort";
+
+export interface PostgresIntervalInterface {
+  name: PostgresTimeIntervalType;
+  alias: PostgresTimeIntervalType;
+  args: Record<any, any>;
+  fieldsByTypeName: Record<any, any>;
+}
+
 export const BIGINT_OID = "20";
 export const INT2_OID = "21";
 export const INT4_OID = "23";

@@ -1,6 +1,12 @@
 # @brunatali/pg-aggregates
 
-Same pluging from `@graphile/pg-aggregates` incuding custumizable time zone.
+Same pluging from `@graphile/pg-aggregates` incuding:
+
+- Customizable time zone
+- `Interval` type corrections
+- `Interval` type new options (secondsInt, iso and isoShort)
+
+**Note.** ISO representations in the 8601 standard.
 
 ## @graphile/pg-aggregates
 
@@ -8,8 +14,8 @@ Same pluging from `@graphile/pg-aggregates` incuding custumizable time zone.
 
 ## Usage
 
-`timezone` is just applicable for `groupBy` using column that represents `time`,
-`date` or both.  
+`timezone` is just applicable for `groupBy` item using column that represents
+`time`, `date` or both.  
 It's value must be entered as `string`, representing hour. Eg:
 
 - '03'
@@ -32,6 +38,31 @@ query GameAggregates {
 }
 ```
 
+With interval corrections, now is perfectly possible to retrieve an average
+field by issue this GraphQL query:
+
+````graphql
+query PlayersAggregates {
+  allPlayers {
+    groupedAggregates(groupBy: PLAYER_NAME) {
+      average {
+        gameTime {
+          seconds
+          secondsInt
+          minutes
+          hours
+          days
+          months
+          years
+          iso
+          isoShort
+        }
+      }
+    }
+  }
+}
+
+
 ### Environment variable
 
 Is accepted to set a default time zone by placing `GROUP_BY_AGGREGATE_TIMEZONE`
@@ -39,7 +70,7 @@ to .env file.
 
 ```bash
 GROUP_BY_AGGREGATE_TIMEZONE=-03
-```
+````
 
 ## Defining your own grouping derivatives
 
