@@ -1,5 +1,13 @@
 import type { PgAttribute, PgType, SQL, PgProc } from "graphile-build-pg";
 
+/**
+ * @note Time zone was not parsed by the lib
+ * TODO: https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-TIMEZONES
+ * Plus https://www.postgresql.org/docs/current/datetime-posix-timezone-specs.html
+ */
+type TZ_TIME_TYPE = string;
+export type TIMEZONE_TYPE = TZ_TIME_TYPE;
+
 export interface AggregateGroupBySpec {
   /** Must not change since it's used in type names/etc */
   id: string; // e.g. 'truncated-to-hour'

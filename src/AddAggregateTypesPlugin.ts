@@ -195,7 +195,9 @@ const AddAggregateTypesPlugin: Plugin = (builder) => {
           /**
            * This will (re)produce standard Interval fields plus some
            * customs formats
-           * @returns
+           * @note Standard GraphQL types taken from
+           * https://github.com/graphql-java/graphql-java/tree/master/src/main/java/graphql/schema
+           * Types documentation at https://graphql.org/learn/schema/
            */
           const makeIntervalFields = () => {
             return {

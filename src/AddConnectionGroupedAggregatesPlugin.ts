@@ -6,21 +6,7 @@ import type {
   GraphQLObjectType,
 } from "graphql";
 
-type TZ_TIME_TYPE =
-  | "00"
-  | "01"
-  | "02"
-  | "03"
-  | "04"
-  | "05"
-  | "06"
-  | "07"
-  | "08"
-  | "09"
-  | "10"
-  | "11"
-  | "12";
-export type TIMEZONE_TYPE = `${TZ_TIME_TYPE}` | `-${TZ_TIME_TYPE}`;
+import { TIMEZONE_TYPE } from "./interfaces";
 
 function isValidEnum(enumType: GraphQLEnumType): boolean {
   try {
@@ -198,7 +184,7 @@ coalesce((select json_agg(j.data) from (
               timezone: {
                 type: GraphQLString,
                 description: build.wrapDescription(
-                  `Use this to set time zone for date_trunc. ([-]00)`,
+                  `Use this to set time zone for date_trunc that accepts three different forms: Full time zone name; Time zone abbreviation; POSIX-style time zone specifications.`,
                   "arg"
                 ),
               },

@@ -1,7 +1,6 @@
 import type { Plugin } from "graphile-build";
 import type { PgClass, SQL } from "graphile-build-pg";
-import { AggregateGroupBySpec } from "./interfaces";
-import { TIMEZONE_TYPE } from "./AddConnectionGroupedAggregatesPlugin";
+import { AggregateGroupBySpec, TIMEZONE_TYPE } from "./interfaces";
 
 const AddGroupByAggregateEnumValuesForColumnsPlugin: Plugin = (builder) => {
   // Now add group by columns

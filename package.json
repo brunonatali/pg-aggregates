@@ -1,6 +1,6 @@
 {
   "name": "@brunatali/pg-aggregates",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Enhanced aggregates support for PostGraphile",
   "main": "dist/index.js",
   "scripts": {
