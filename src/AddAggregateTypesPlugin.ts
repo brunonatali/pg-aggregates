@@ -263,6 +263,13 @@ const AddAggregateTypesPlugin: Plugin = (builder) => {
                 ),
                 type: GraphQLString,
               },
+              raw: {
+                description: build.wrapDescription(
+                  "Exactly the same result.",
+                  "field"
+                ),
+                type: GraphQLString,
+              },
             };
           };
           /**
@@ -367,6 +374,9 @@ const AddAggregateTypesPlugin: Plugin = (builder) => {
                                 case "secondsInt":
                                   return postgresParse(parent[safeAlias])
                                     .seconds;
+
+                                case "raw":
+                                  return parent[safeAlias];
 
                                 default:
                                   return postgresParse(parent[safeAlias])[

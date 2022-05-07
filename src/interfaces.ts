@@ -61,7 +61,8 @@ export type PostgresTimeIntervalType =
   | "months"
   | "years"
   | "iso"
-  | "isoShort";
+  | "isoShort"
+  | "raw";
 
 export interface PostgresIntervalInterface {
   name: PostgresTimeIntervalType;

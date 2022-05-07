@@ -4,7 +4,7 @@ Same pluging from `@graphile/pg-aggregates` incuding:
 
 - Customizable time zone
 - `Interval` type corrections
-- `Interval` type new options (secondsInt, iso and isoShort)
+- `Interval` type new options (secondsInt, iso, isoShort and raw)
 
 **Note.** ISO representations in the 8601 standard.
 
@@ -56,6 +56,7 @@ query PlayersAggregates {
           years
           iso
           isoShort
+          raw
         }
       }
     }
