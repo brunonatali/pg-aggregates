@@ -274,16 +274,23 @@ const AddAggregateTypesPlugin: Plugin = (builder) => {
               },
             };
           };
+
+          const fieldName = inflection.column(attr);
+
           /**
            * Lets recreate standard GraphQL Interval type
            * Here we will extend to add iso, isoShort and secondsInt
            */
           let intervalTypeName: string;
           if (Type.toString() === "Interval") {
-            intervalTypeName = `${inflection.aggregateType(
-              table,
-              spec
-            )}IntervalType`;
+            /**
+             * Like:
+             *  - AggrMyTableNameAverageAggregatesMyColumnNameIntervalType
+             *  - AggrMyTableNameSumAggregatesMyColumnNameIntervalType
+             */
+            intervalTypeName = `${inflection.aggregateType(table, spec)}${
+              fieldName.charAt(0).toUpperCase() + fieldName.slice(1)
+            }TypeInterval`;
             Type = newWithHooks(
               GraphQLObjectType,
               {
@@ -300,7 +307,6 @@ const AddAggregateTypesPlugin: Plugin = (builder) => {
             );
           }
 
-          const fieldName = inflection.column(attr);
           return build.extend(memo, {
             [fieldName]: pgField(
               build,
