@@ -4,13 +4,11 @@ Same pluging from `@graphile/pg-aggregates` incuding:
 
 - Customizable time zone
 - `Interval` type corrections
-- `Interval` type new options (secondsInt, iso, isoShort and raw)
+- `Interval` type new options (secondsInt, iso, isoShort and raw)  
+  **Note.** ISO representations in the 8601 standard.
 
-**Note.** ISO representations in the 8601 standard.
-
-- Group by keys was changed from `array` to `object` (^v0.2).
-
-**Warning.** This feture is a break change, update with caution.
+- Group by keys was changed from `array` to `object` (^v0.2).  
+  **Warning.** This feature is a breaking change, update with caution.
 
 ## @graphile/pg-aggregates
 

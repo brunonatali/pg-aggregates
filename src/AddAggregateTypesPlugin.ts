@@ -58,7 +58,7 @@ const AddAggregateTypesPlugin: Plugin = (builder) => {
                 },
 
                 // Parses an externally provided value to use as an input.
-                /* parseValue: (_val) => {console.log('b'); return _val;}, */
+                /* parseValue: (_val) => _val, */
 
                 // Parses an externally provided literal value to use as an input.
                 /*
