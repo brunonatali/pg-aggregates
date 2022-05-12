@@ -6,7 +6,8 @@ import type {
   PgClass,
 } from "graphile-build-pg";
 import type { GraphQLResolveInfo, GraphQLFieldConfigMap } from "graphql";
-import { AggregateSpec } from "./interfaces";
+import * as postgresParse from "postgres-interval";
+import { AggregateSpec, PostgresIntervalInterface } from "./interfaces";
 
 const AddAggregateTypesPlugin: Plugin = (builder) => {
   // Create the aggregates type for each table
@@ -141,8 +142,16 @@ const AddAggregateTypesPlugin: Plugin = (builder) => {
   builder.hook("GraphQLObjectType:fields", (fields, build, context) => {
     const {
       pgSql: sql,
-      graphql: { GraphQLNonNull },
+      newWithHooks,
+      graphql: {
+        GraphQLNonNull,
+        GraphQLObjectType,
+        GraphQLInt,
+        GraphQLFloat,
+        GraphQLString,
+      },
       inflection,
+      parseResolveInfo,
       getSafeAliasFromAlias,
       getSafeAliasFromResolveInfo,
       pgField,
@@ -175,14 +184,129 @@ const AddAggregateTypesPlugin: Plugin = (builder) => {
           const [pgType, pgTypeModifier] = spec.pgTypeAndModifierModifier
             ? spec.pgTypeAndModifierModifier(attr.type, attr.typeModifier)
             : [attr.type, attr.typeModifier];
-          const Type = build.pgGetGqlTypeByTypeIdAndModifier(
+          let Type = build.pgGetGqlTypeByTypeIdAndModifier(
             pgType.id,
             pgTypeModifier
           );
           if (!Type) {
             return memo;
           }
+
+          /**
+           * This will (re)produce standard Interval fields plus some
+           * customs formats
+           * @note Standard GraphQL types taken from
+           * https://github.com/graphql-java/graphql-java/tree/master/src/main/java/graphql/schema
+           * Types documentation at https://graphql.org/learn/schema/
+           */
+          const makeIntervalFields = () => {
+            return {
+              seconds: {
+                description: build.wrapDescription(
+                  "A quantity of seconds. This is the only non-integer field, as all the other fields will dump their overflow into a smaller unit of time. Intervals don’t have a smaller unit than seconds.",
+                  "field"
+                ),
+                type: GraphQLFloat,
+              },
+              // To maintain compatibility, will create `secondsInt`, which applies parseInt()
+              secondsInt: {
+                description: build.wrapDescription(
+                  "A quantity of seconds. This is the only non-integer field, as all the other fields will dump their overflow into a smaller unit of time. Intervals don’t have a smaller unit than seconds.",
+                  "field"
+                ),
+                type: GraphQLInt,
+              },
+              minutes: {
+                description: build.wrapDescription(
+                  "A quantity of minutes.",
+                  "field"
+                ),
+                type: GraphQLInt,
+              },
+              hours: {
+                description: build.wrapDescription(
+                  "A quantity of hours.",
+                  "field"
+                ),
+                type: GraphQLInt,
+              },
+              days: {
+                description: build.wrapDescription(
+                  "A quantity of days.",
+                  "field"
+                ),
+                type: GraphQLInt,
+              },
+              months: {
+                description: build.wrapDescription(
+                  "A quantity of months.",
+                  "field"
+                ),
+                type: GraphQLInt,
+              },
+              years: {
+                description: build.wrapDescription(
+                  "A quantity of years.",
+                  "field"
+                ),
+                type: GraphQLInt,
+              },
+              iso: {
+                description: build.wrapDescription(
+                  "A ISO 8601 representation.",
+                  "field"
+                ),
+                type: GraphQLString,
+              },
+              isoShort: {
+                description: build.wrapDescription(
+                  "A ISO 8601 Short representation.",
+                  "field"
+                ),
+                type: GraphQLString,
+              },
+              raw: {
+                description: build.wrapDescription(
+                  "Exactly the same result.",
+                  "field"
+                ),
+                type: GraphQLString,
+              },
+            };
+          };
+
           const fieldName = inflection.column(attr);
+
+          /**
+           * Lets recreate standard GraphQL Interval type
+           * Here we will extend to add iso, isoShort and secondsInt
+           */
+          let intervalTypeName: string;
+          if (Type.toString() === "Interval") {
+            /**
+             * Like:
+             *  - AggrMyTableNameAverageAggregatesMyColumnNameIntervalType
+             *  - AggrMyTableNameSumAggregatesMyColumnNameIntervalType
+             */
+            intervalTypeName = `${inflection.aggregateType(table, spec)}${
+              fieldName.charAt(0).toUpperCase() + fieldName.slice(1)
+            }TypeInterval`;
+            Type = newWithHooks(
+              GraphQLObjectType,
+              {
+                name: intervalTypeName,
+                description: build.wrapDescription(
+                  "An interval of time that has passed where the smallest distinct unit is a second.",
+                  "type"
+                ),
+                fields: makeIntervalFields(),
+              },
+              {
+                isIntervalType: true,
+              }
+            );
+          }
+
           return build.extend(memo, {
             [fieldName]: pgField(
               build,
@@ -210,15 +334,83 @@ const AddAggregateTypesPlugin: Plugin = (builder) => {
                 return {
                   description: `${spec.HumanLabel} of ${fieldName} across the matching connection`,
                   type: spec.isNonNull ? new GraphQLNonNull(Type) : Type,
-                  resolve(
-                    parent: any,
-                    _args: any,
-                    _context: any,
-                    resolveInfo: GraphQLResolveInfo
-                  ) {
-                    const safeAlias = getSafeAliasFromResolveInfo(resolveInfo);
-                    return parent[safeAlias];
-                  },
+                  resolve: !intervalTypeName
+                    ? (
+                        parent: any,
+                        _args: any,
+                        _context: any,
+                        resolveInfo: GraphQLResolveInfo
+                      ) => parent[getSafeAliasFromResolveInfo(resolveInfo)]
+                    : (
+                        parent: any,
+                        _args: any,
+                        _context: any,
+                        resolveInfo: GraphQLResolveInfo
+                      ) => {
+                        const safeAlias = getSafeAliasFromResolveInfo(
+                          resolveInfo
+                        );
+
+                        if (typeof parent[safeAlias] === "string") {
+                          const requestFieldsInfo =
+                            parseResolveInfo(resolveInfo) || {};
+                          if (
+                            requestFieldsInfo.fieldsByTypeName &&
+                            requestFieldsInfo.fieldsByTypeName[intervalTypeName]
+                          ) {
+                            const mappedReturn = {};
+
+                            const getParsedIntervalReturn = (
+                              timeName: string
+                            ) => {
+                              switch (timeName) {
+                                case "iso":
+                                  return postgresParse(
+                                    parent[safeAlias]
+                                  ).toISOString();
+
+                                case "isoShort":
+                                  return postgresParse(
+                                    parent[safeAlias]
+                                  ).toISOStringShort();
+
+                                case "seconds":
+                                  return parseFloat(
+                                    parent[safeAlias].split(":")[2]
+                                  );
+
+                                case "secondsInt":
+                                  return postgresParse(parent[safeAlias])
+                                    .seconds;
+
+                                case "raw":
+                                  return parent[safeAlias];
+
+                                default:
+                                  return postgresParse(parent[safeAlias])[
+                                    timeName
+                                  ];
+                              }
+                            };
+
+                            Object.entries(
+                              requestFieldsInfo.fieldsByTypeName[
+                                intervalTypeName
+                              ]
+                            ).forEach(
+                              ([, time]: [any, PostgresIntervalInterface]) => {
+                                mappedReturn[
+                                  time.name
+                                ] = getParsedIntervalReturn(time.name);
+                              }
+                            );
+
+                            return mappedReturn;
+                          }
+                        }
+
+                        return parent[safeAlias];
+                      },
                 };
               },
               {

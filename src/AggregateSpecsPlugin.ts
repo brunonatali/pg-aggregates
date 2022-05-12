@@ -18,6 +18,8 @@ const AggregateSpecsPlugin: Plugin = (builder) => {
   builder.hook("build", (build) => {
     const { pgSql: sql } = build;
     const isNumberLike = (pgType: PgType): boolean => pgType.category === "N";
+    const isNumberOrIntervalLike = (pgType: PgType): boolean =>
+      pgType.category === "N" || pgType.id === INTERVAL_OID;
     /** Maps from the data type of the column to the data type of the sum aggregate */
     /** BigFloat is our fallback type; it should be valid for almost all numeric types */
     const convertWithMapAndFallback = (
@@ -48,7 +50,7 @@ const AggregateSpecsPlugin: Plugin = (builder) => {
         id: "sum",
         humanLabel: "sum",
         HumanLabel: "Sum",
-        isSuitableType: isNumberLike,
+        isSuitableType: isNumberOrIntervalLike,
         // I've wrapped it in `coalesce` so that it cannot be null
         sqlAggregateWrap: (sqlFrag) =>
           sql.fragment`coalesce(sum(${sqlFrag}), 0)`,
@@ -86,21 +88,21 @@ const AggregateSpecsPlugin: Plugin = (builder) => {
         id: "min",
         humanLabel: "minimum",
         HumanLabel: "Minimum",
-        isSuitableType: isNumberLike,
+        isSuitableType: isNumberOrIntervalLike,
         sqlAggregateWrap: (sqlFrag) => sql.fragment`min(${sqlFrag})`,
       },
       {
         id: "max",
         humanLabel: "maximum",
         HumanLabel: "Maximum",
-        isSuitableType: isNumberLike,
+        isSuitableType: isNumberOrIntervalLike,
         sqlAggregateWrap: (sqlFrag) => sql.fragment`max(${sqlFrag})`,
       },
       {
         id: "average",
         humanLabel: "mean average",
         HumanLabel: "Mean average",
-        isSuitableType: isNumberLike,
+        isSuitableType: isNumberOrIntervalLike,
         sqlAggregateWrap: (sqlFrag) => sql.fragment`avg(${sqlFrag})`,
 
         // An AVG(...) ends up more precise than any individual value; see
@@ -195,6 +197,7 @@ const AggregateSpecsPlugin: Plugin = (builder) => {
         isSuitableType: (pgType) =>
           /* timestamp or timestamptz */
           pgType.id === TIMESTAMP_OID || pgType.id === TIMESTAMPTZ_OID,
+        isTimestampLike: true,
         sqlWrap: (sqlFrag) => sql.fragment`date_trunc('hour', ${sqlFrag})`,
       },
       {
@@ -202,6 +205,7 @@ const AggregateSpecsPlugin: Plugin = (builder) => {
         isSuitableType: (pgType) =>
           /* timestamp or timestamptz */
           pgType.id === TIMESTAMP_OID || pgType.id === TIMESTAMPTZ_OID,
+        isTimestampLike: true,
         sqlWrap: (sqlFrag) => sql.fragment`date_trunc('day', ${sqlFrag})`,
       },
     ];

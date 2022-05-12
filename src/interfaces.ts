@@ -1,5 +1,13 @@
 import type { PgAttribute, PgType, SQL, PgProc } from "graphile-build-pg";
 
+/**
+ * @note Time zone was not parsed by the lib
+ * TODO: https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-TIMEZONES
+ * Plus https://www.postgresql.org/docs/current/datetime-posix-timezone-specs.html
+ */
+type TZ_TIME_TYPE = string;
+export type TIMEZONE_TYPE = TZ_TIME_TYPE;
+
 export interface AggregateGroupBySpec {
   /** Must not change since it's used in type names/etc */
   id: string; // e.g. 'truncated-to-hour'
@@ -12,6 +20,9 @@ export interface AggregateGroupBySpec {
 
   /** Wraps the SQL to return a derivative (e.g. sqlFrag => sql.fragment`date_trunc('hour', ${sqlFrag})`) */
   sqlWrap: (sqlFrag: SQL) => SQL;
+
+  /** Tell the query builder the column type, making it possible to add or modify sql for right query */
+  isTimestampLike?: boolean;
 }
 
 export interface AggregateSpec {
@@ -47,6 +58,25 @@ export interface AggregateSpec {
 
   /** Set true if the result is guaranteed to be non-null */
   isNonNull?: boolean;
+}
+
+export type PostgresTimeIntervalType =
+  | "seconds"
+  | "secondsFloat"
+  | "minutes"
+  | "hours"
+  | "days"
+  | "months"
+  | "years"
+  | "iso"
+  | "isoShort"
+  | "raw";
+
+export interface PostgresIntervalInterface {
+  name: PostgresTimeIntervalType;
+  alias: PostgresTimeIntervalType;
+  args: Record<any, any>;
+  fieldsByTypeName: Record<any, any>;
 }
 
 export const BIGINT_OID = "20";
