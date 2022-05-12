@@ -52,6 +52,7 @@ const AddGroupByAggregateEnumValuesForColumnsPlugin: Plugin = (builder) => {
                         ? sql.fragment` AT TIME ZONE ${sql.value(timezone)}`
                         : ""
                     }`,
+                  name: attr.name,
                 },
               },
             },
@@ -91,6 +92,7 @@ const AddGroupByAggregateEnumValuesForColumnsPlugin: Plugin = (builder) => {
                               : ""
                           }`
                         ),
+                      name: attr.name,
                     },
                   },
                 },

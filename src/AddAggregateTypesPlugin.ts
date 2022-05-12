@@ -14,12 +14,7 @@ const AddAggregateTypesPlugin: Plugin = (builder) => {
   builder.hook("init", (init, build, _context) => {
     const {
       newWithHooks,
-      graphql: {
-        GraphQLObjectType,
-        GraphQLList,
-        GraphQLNonNull,
-        GraphQLString,
-      },
+      graphql: { GraphQLObjectType, GraphQLScalarType },
       inflection,
       pgIntrospectionResultsByKind,
       pgOmit: omit,
@@ -46,9 +41,42 @@ const AddAggregateTypesPlugin: Plugin = (builder) => {
           name: inflection.aggregateContainerType(table),
           fields: {
             keys: {
-              type: new GraphQLList(new GraphQLNonNull(GraphQLString)),
+              description: "Aggregate group by used items as `ECMA-404` list",
+              type: new GraphQLScalarType({
+                name: `${inflection.aggregateContainerType(table)}TypeJSON`,
+                description:
+                  "The `JSON` scalar type represents JSON values as specified by `ECMA-404`",
+                // Serializes an internal value to include in a response.
+                serialize: (retVal) => {
+                  if (typeof retVal !== "object" || Array.isArray(retVal)) {
+                    throw new TypeError(
+                      `JSON cannot represent non-object value: ${retVal}`
+                    );
+                  }
+
+                  return retVal || {};
+                },
+
+                // Parses an externally provided value to use as an input.
+                /* parseValue: (_val) => {console.log('b'); return _val;}, */
+
+                // Parses an externally provided literal value to use as an input.
+                /*
+                  parseLiteral: (ast, variables) {
+                    switch (ast.kind) {
+                      case Kind.FLOAT: 
+                        return parseFloat(ast.value)
+                      case Kind.VARIABLE:
+                      {
+                        const name = ast.name.value;
+                        return variables ? variables[name] : undefined;
+                      }
+                    }
+                  },
+                 */
+              }),
               resolver(parent: any) {
-                return parent.keys || [];
+                return parent.keys || {};
               },
             },
           },

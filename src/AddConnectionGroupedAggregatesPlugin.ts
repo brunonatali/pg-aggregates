@@ -104,8 +104,15 @@ const AddConnectionGroupedAggregatesPlugin: Plugin = (builder) => {
                     args.timezone ||
                     process.env.GROUP_BY_AGGREGATE_TIMEZONE ||
                     null;
-                  const groupBy: SQL[] = args.groupBy.map((b: any) =>
-                    b.spec(queryBuilder.getTableAlias(), timezone)
+
+                  const groupBy: SQL[] = args.groupBy.map(
+                    (b: any) =>
+                      sql.fragment`(${sql.literal(
+                        inflection.camelCase(b.name)
+                      )})::text, (${b.spec(
+                        queryBuilder.getTableAlias(),
+                        timezone
+                      )})`
                   );
                   const having: SQL | null = args.having
                     ? TableHavingInputType.extensions.graphile.toSql(
@@ -120,8 +127,8 @@ const AddConnectionGroupedAggregatesPlugin: Plugin = (builder) => {
                   }
                   innerQueryBuilder.select(
                     () =>
-                      sql.fragment`json_build_array(${sql.join(
-                        groupBy.map((b) => sql.fragment`(${b})::text`),
+                      sql.fragment`json_build_object(${sql.join(
+                        groupBy,
                         ", "
                       )})`,
                     "keys"
