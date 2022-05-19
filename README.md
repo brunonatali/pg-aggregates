@@ -4,15 +4,19 @@ Same pluging from `@graphile/pg-aggregates` incuding:
 
 - Customizable time zone
 - `Interval` type corrections
-- `Interval` type new options (secondsInt, iso, isoShort and raw)
+- `Interval` type new options (secondsInt, iso, isoShort and raw)  
+  **Note.** ISO representations in the 8601 standard.
 
-**Note.** ISO representations in the 8601 standard.
+- Group by keys was changed from `array` to `object` (^v0.2).  
+  **Warning.** This feature is a breaking change, update with caution.
 
 ## @graphile/pg-aggregates
 
 ## [Click here to read original description from @graphile/pg-aggregates.](https://github.com/graphile/pg-aggregates)
 
 ## Usage
+
+### TIMEZONE
 
 `timezone` is just applicable for `groupBy` item using column that represents
 `time`, `date` or both.  
@@ -29,7 +33,6 @@ You can issue a GraphQL query such as:
 query GameAggregates {
   allPlayers {
     groupedAggregates(groupBy: CREATED_AT_TRUNCATED_TO_DAY, timezone: "03") {
-      keys
       distinctCount {
         goals
       }
@@ -38,10 +41,12 @@ query GameAggregates {
 }
 ```
 
+### INTERVAL
+
 With interval corrections, now is perfectly possible to retrieve an average
 field by issue this GraphQL query:
 
-````graphql
+```graphql
 query PlayersAggregates {
   allPlayers {
     groupedAggregates(groupBy: PLAYER_NAME) {
@@ -62,16 +67,74 @@ query PlayersAggregates {
     }
   }
 }
+```
 
-
-### Environment variable
+#### Environment variable
 
 Is accepted to set a default time zone by placing `GROUP_BY_AGGREGATE_TIMEZONE`
 to .env file.
 
 ```bash
 GROUP_BY_AGGREGATE_TIMEZONE=-03
-````
+```
+
+### KEYS
+
+By using this enhanced `keys`, you be able to list any kind of values:
+
+- Numbers
+- Strings
+- Arrays
+- Objects
+- Null
+
+Considering we have 5 players distributed into `male` and `female`, with three
+kinds of ages, 25, 29 and 30 years old...
+
+An query issued as:
+
+```graphql
+query GameAggregates {
+  allPlayers {
+    groupedAggregates(groupBy: [PLAYER_GENDER, PLAYER_AGE]) {
+      keys
+    }
+    totalCount
+  }
+}
+```
+
+Will return something like this:
+
+```json
+{
+  "data": {
+    "allPlayers": {
+      "groupedAggregates": [
+        {
+          "keys": {
+            "playerGender": "female",
+            "playerAge": 25
+          }
+        },
+        {
+          "keys": {
+            "playerGender": "female",
+            "playerAge": 29
+          }
+        },
+        {
+          "keys": {
+            "playerGender": "male",
+            "playerAge": 30
+          }
+        }
+      ],
+      "totalCount": 5
+    }
+  }
+}
+```
 
 ## Defining your own grouping derivatives
 
