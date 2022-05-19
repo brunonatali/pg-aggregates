@@ -105,15 +105,17 @@ const AddConnectionGroupedAggregatesPlugin: Plugin = (builder) => {
                     process.env.GROUP_BY_AGGREGATE_TIMEZONE ||
                     null;
 
-                  const groupBy: SQL[] = args.groupBy.map(
-                    (b: any) =>
-                      sql.fragment`(${sql.literal(
-                        inflection.camelCase(b.name)
-                      )})::text, (${b.spec(
-                        queryBuilder.getTableAlias(),
-                        timezone
-                      )})`
-                  );
+                  const groupBy: Array<
+                    Array<TemplateStringsArray>
+                  > = args.groupBy.map((b: any) => [
+                    // Camel case row name (tableColumnName)
+                    sql.fragment`${sql.literal(inflection.camelCase(b.name))}`,
+                    // Alias plus raw row name (__local_0__.table_column_name)
+                    sql.fragment`${b.spec(
+                      queryBuilder.getTableAlias(),
+                      timezone
+                    )}`,
+                  ]);
                   const having: SQL | null = args.having
                     ? TableHavingInputType.extensions.graphile.toSql(
                         args.having,
@@ -128,7 +130,12 @@ const AddConnectionGroupedAggregatesPlugin: Plugin = (builder) => {
                   innerQueryBuilder.select(
                     () =>
                       sql.fragment`json_build_object(${sql.join(
-                        groupBy,
+                        groupBy.map(
+                          ([name, spec]: [
+                            TemplateStringsArray,
+                            TemplateStringsArray
+                          ]) => sql.fragment`(${name})::text, (${spec})`
+                        ),
                         ", "
                       )})`,
                     "keys"
@@ -140,7 +147,11 @@ coalesce((select json_agg(j.data) from (
   where ${queryBuilder.buildWhereClause(false, false, options)}
   ${
     groupBy.length > 0
-      ? sql.fragment`group by ${sql.join(groupBy, ", ")}`
+      ? sql.fragment`group by ${sql.join(
+          // Get just table's original row name
+          groupBy.map(([, col]) => col),
+          ", "
+        )}`
       : sql.blank
   }
   ${having ? sql.fragment`having ${having}` : sql.empty}
