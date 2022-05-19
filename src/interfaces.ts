@@ -1,4 +1,10 @@
-import type { PgAttribute, PgType, SQL, PgProc } from "graphile-build-pg";
+import {
+  QueryBuilder,
+  PgAttribute,
+  PgType,
+  SQL,
+  PgProc,
+} from "graphile-build-pg";
 
 /**
  * @note Time zone was not parsed by the lib
@@ -58,6 +64,16 @@ export interface AggregateSpec {
 
   /** Set true if the result is guaranteed to be non-null */
   isNonNull?: boolean;
+}
+
+export interface OurCustomQueryBuilder extends QueryBuilder {
+  /**
+   * `data` has too much arguments, but we need just `cursorPrefix`
+   * for now.
+   */
+  data: {
+    cursorPrefix: Array<string>;
+  };
 }
 
 export type PostgresTimeIntervalType =
