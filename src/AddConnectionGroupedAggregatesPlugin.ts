@@ -128,6 +128,49 @@ const AddConnectionGroupedAggregatesPlugin: Plugin = (builder) => {
                       "Must not provide having without also providing groupBy"
                     );
                   }
+
+                  const isPaginationRequired =
+                    options.withPagination ||
+                    options.withPaginationAsFields ||
+                    options.withCursor;
+                  let limit: number | undefined;
+                  let offset: number | undefined;
+                  let flip: boolean | undefined;
+                  let orderBy: Array<SQL> | undefined;
+
+                  if (isPaginationRequired) {
+                    const paginationConfig = queryBuilder.getFinalLimitAndOffset();
+                    // To use case Cursor needs some customization
+                    // const selectCursor = queryBuilder.getSelectCursor();
+                    limit = paginationConfig.limit;
+                    offset = paginationConfig.offset;
+                    flip = paginationConfig.flip;
+
+                    orderBy = queryBuilder
+                      .getOrderByExpressionsAndDirections()
+                      .map(([expr, ascending, nullsFirst]) => {
+                        groupBy.push([
+                          // We need to get just column name
+                          // Need to test if have more than 3 items on this expression
+                          sql.fragment`${sql.literal(
+                            inflection.camelCase(expr[2].names[0])
+                          )}`,
+                          sql.fragment`${expr}`,
+                        ]);
+                        return sql.fragment`${expr} ${
+                          Number(ascending) ^ Number(flip)
+                            ? sql.fragment`ASC`
+                            : sql.fragment`DESC`
+                        }${
+                          nullsFirst === true
+                            ? sql.fragment` NULLS FIRST`
+                            : nullsFirst === false
+                            ? sql.fragment` NULLS LAST`
+                            : null
+                        }`;
+                      });
+                  }
+
                   innerQueryBuilder.select(
                     () =>
                       sql.fragment`json_build_object(${sql.join(
@@ -141,59 +184,6 @@ const AddConnectionGroupedAggregatesPlugin: Plugin = (builder) => {
                       )})`,
                     "keys"
                   );
-
-                  const isPaginationRequired =
-                    options.withPagination ||
-                    options.withPaginationAsFields ||
-                    options.withCursor;
-                  let limit: number | undefined;
-                  let offset: number | undefined;
-                  // let flip: boolean | undefined;
-                  let orderBy: Array<SQL> | undefined;
-
-                  if (isPaginationRequired) {
-                    const paginationConfig = queryBuilder.getFinalLimitAndOffset();
-                    const selectCursor = queryBuilder.getSelectCursor();
-                    limit = paginationConfig.limit;
-                    offset = paginationConfig.offset;
-                    // flip = paginationConfig.flip;
-
-                    /*
-                    orderBy = queryBuilder
-                      .getOrderByExpressionsAndDirections()
-                      .map(
-                        ([expr, ascending, nullsFirst]) =>
-                          sql.fragment`${expr} ${
-                            Number(ascending) ^ Number(flip)
-                              ? sql.fragment`ASC`
-                              : sql.fragment`DESC`
-                          }${
-                            nullsFirst === true
-                              ? sql.fragment` NULLS FIRST`
-                              : nullsFirst === false
-                              ? sql.fragment` NULLS LAST`
-                              : null
-                          }`
-                      );
-                    */
-                    if (selectCursor && !_.isEmpty(selectCursor)) {
-                      innerQueryBuilder.selectCursor(
-                        () =>
-                          sql.fragment`json_build_array(${sql.join(
-                            queryBuilder.data.cursorPrefix.map((val: any) =>
-                              sql.literal(val)
-                            ),
-                            ", "
-                          )}, ${
-                            options.useAsterisk
-                              ? sql.fragment`${sql.literal(
-                                  queryBuilder.getFinalOffset() || 0
-                                )} + `
-                              : sql.fragment``
-                          }(row_number() over (partition by 1)))`
-                      );
-                    }
-                  }
 
                   return sql.fragment`\
 coalesce((select json_agg(j.data) from (
